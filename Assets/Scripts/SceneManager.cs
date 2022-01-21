@@ -38,7 +38,7 @@ public class SceneManager : MonoBehaviour
         var inst = GameObject.Instantiate(prefab);
         inst.transform.parent = gameObject.transform;
         inst.transform.position = Camera.main.transform.position + Camera.main.transform.forward * newSpawnObjectOffset;
-        inst.transform.rotation.SetLookRotation(Camera.main.transform.position);
+        inst.transform.LookAt(Camera.main.transform.position);
         inst.SetActive(true);
         
         holdObject = inst;
