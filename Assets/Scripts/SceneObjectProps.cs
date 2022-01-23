@@ -26,3 +26,18 @@ public class SaveData
         objPros = obj;
     }
 }
+
+[System.Serializable]
+public class SaveMesurement
+{
+    public List<SceneObjectProps> propsSignal = new List<SceneObjectProps>();
+    public List<SceneObjectProps> propsDanger = new List<SceneObjectProps>();
+    public List<float> timing = new List<float>();
+
+    public SaveMesurement(List<SceneObjectProps> propsSignal, List<SceneObjectProps> propsDanger, List<float> timing) 
+    {
+        this.propsSignal = propsSignal;
+        this.propsDanger = propsDanger;
+        this.timing = timing;
+    }
+}

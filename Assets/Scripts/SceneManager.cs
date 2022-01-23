@@ -11,6 +11,17 @@ public class SceneManager : MonoBehaviour
     [SerializeField] private Vector3 newSpawnObjectOffset;
     [SerializeField] private List<GameObject> objectPrefabs;
     [SerializeField] private List<GameObject> playModeObjectPrefabs;
+    [SerializeField] private GameObject arragementObj;
+
+    [System.Serializable]
+    public class SerializeablePair
+    {
+        public GameObject signal;
+        public GameObject danger;
+    }
+    [SerializeField] private List<SerializeablePair> mesurementTimingPair;
+    private Dictionary<GameObject, float> mesurementResults = new Dictionary<GameObject, float>();
+
     private Dictionary<GameObject, SceneObjectProps> sceneObjects = new Dictionary<GameObject, SceneObjectProps>();
     private GameObject holdObject;
     // small trick just make manager global static
@@ -25,6 +36,7 @@ public class SceneManager : MonoBehaviour
     {
         Debug.Assert(__scene == null);
         __scene = this;
+        reloadSceneObjectsIfNeeded();
     }
 
     void Update()
@@ -37,11 +49,30 @@ public class SceneManager : MonoBehaviour
         sceneObjects[dest].isPlayerEscapeDropping = isPlayerEscape;
     }
 
+    public void reportEyeTrack(ReactionWhenPlayerNearby.REACT_TYPE type, GameObject dest)
+    {
+        foreach(var pair in mesurementTimingPair)
+        {
+            if (dest == pair.signal && !mesurementResults.ContainsKey(dest))
+            {
+                mesurementResults.Add(dest, Time.time);
+                Debug.Log("First signal deteccted");
+            }
+
+            if (dest == pair.danger && mesurementResults.ContainsKey(pair.signal))
+            {
+                mesurementResults[pair.signal] = Time.time - mesurementResults[pair.signal];
+                Debug.Log("Second danger deteccted, saving");
+                SaveMesurementResult();
+            }
+        }
+
+    }
     public void newObject(int prefabIdx)
     {
         var prefab = objectPrefabs[prefabIdx];
         var inst = GameObject.Instantiate(prefab);
-        inst.transform.parent = gameObject.transform;
+        inst.transform.parent = arragementObj.transform;
         inst.transform.position = Camera.main.transform.position  
                 + Camera.main.transform.forward * newSpawnObjectOffset.z 
                 + Camera.main.transform.up * newSpawnObjectOffset.y
@@ -131,7 +162,7 @@ public class SceneManager : MonoBehaviour
     }
     public void saveScene()
     {
-
+        reloadSceneObjectsIfNeeded();
         BinaryFormatter bf = new BinaryFormatter();
         FileStream file = File.Create(Application.persistentDataPath + "/MySaveData" + findLastSave().ToString());
         var jsonStr = JsonUtility.ToJson(new SaveData(new List<SceneObjectProps>(sceneObjects.Values)));
@@ -141,6 +172,41 @@ public class SceneManager : MonoBehaviour
         Debug.Log("Game data saved!");
     }
 
+    public void reloadSceneObjectsIfNeeded()
+    {
+        // in editor, sceneObjects may be lost
+#if UNITY_EDITOR     
+        if (sceneObjects.Count == 0)
+        {
+            for(int i=0;i<arragementObj.transform.childCount; i++)
+            {    
+                var obj = arragementObj.transform.GetChild(i).gameObject;
+                var originatedName = obj.name.Replace("(Clone)","").Trim();
+                Debug.Log(originatedName);
+                sceneObjects.Add(obj, new SceneObjectProps(objectPrefabs.FindIndex(prefab => prefab.name == originatedName)));
+                sceneObjects[obj].position = obj.transform.position;
+                sceneObjects[obj].rotation = obj.transform.rotation;
+                sceneObjects[obj].localScale = obj.transform.localScale;
+                sceneObjects[obj].isPlayerEscapeDropping = true;
+            }
+        }   
+
+#endif
+    }
+    public void clearScene()
+    {
+        reloadSceneObjectsIfNeeded();
+        foreach (var ins in sceneObjects.Keys)
+        {
+#if UNITY_EDITOR
+            DestroyImmediate(ins);
+#else
+            Destroy(ins);
+#endif
+        }
+        sceneObjects.Clear();
+        Debug.Log("Clear scene!");
+    }
     public void loadScene()
     {
         var sceneIdx = findLastSave();
@@ -150,12 +216,7 @@ public class SceneManager : MonoBehaviour
             return;
         }
 
-        foreach (var ins in sceneObjects.Keys)
-        {
-            Destroy(ins);
-        }
-        sceneObjects.Clear();
-        Debug.Log("Clear scene!");
+        clearScene();
 
         BinaryFormatter bf = new BinaryFormatter();
         FileStream file = File.Open(Application.persistentDataPath + "/MySaveData" + (sceneIdx - 1).ToString(), FileMode.Open);
@@ -171,7 +232,7 @@ public class SceneManager : MonoBehaviour
             inst.transform.rotation = target.rotation;
             inst.transform.localScale = target.localScale;
 
-            inst.transform.parent = gameObject.transform;
+            inst.transform.parent = arragementObj.transform;
             inst.SetActive(true);
             target.isPlayerEscapeDropping = true;
             sceneObjects.Add(inst, target);
@@ -181,4 +242,42 @@ public class SceneManager : MonoBehaviour
 
     }
 
+    public void SaveMesurementResult()
+    {
+        int cnt = 0;
+        for (; ; cnt++)
+        {
+            if (!File.Exists(Application.persistentDataPath + "/MesureResult" + cnt.ToString()))
+            {
+                break;
+            }
+
+        }
+        BinaryFormatter bf = new BinaryFormatter();
+        FileStream file = File.Create(Application.persistentDataPath + "/MesureResult" + cnt.ToString());
+
+        List<SceneObjectProps> propsSignal = new List<SceneObjectProps>();
+        List<SceneObjectProps> propsDanger = new List<SceneObjectProps>();
+        List<float> timing = new List<float>();
+
+        foreach(var pair in mesurementTimingPair)
+        {
+            foreach(var mesureSignal in mesurementResults.Keys)
+            {
+                if (mesureSignal == pair.signal)
+                {
+                    Debug.Log(pair.signal);
+                    Debug.Log(pair.danger);
+                    propsSignal.Add(sceneObjects[pair.signal]);
+                    propsDanger.Add(sceneObjects[pair.danger]);
+                    timing.Add(mesurementResults[mesureSignal]);
+                }               
+            }
+        }
+        var jsonStr = JsonUtility.ToJson(new SaveMesurement(propsSignal, propsDanger, timing));
+        bf.Serialize(file, jsonStr);
+        file.Close();
+        Debug.Log(jsonStr);
+        Debug.Log("Mesurement data saved!");
+    }
 }

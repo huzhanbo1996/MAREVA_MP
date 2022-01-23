@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class ReactionWhenPlayerNearby : MonoBehaviour
 {
-    public enum REACT_TYPE { Panel, SoundFixed, SoundFollowing, DroppingStuff }
+    public enum REACT_TYPE { Panel, PanelFixed, SoundFixed, SoundFollowing, DroppingStuff }
     public bool isPlaying;
     public REACT_TYPE type;
     public GameObject movingPanel;
@@ -29,10 +29,10 @@ public class ReactionWhenPlayerNearby : MonoBehaviour
         switch(type)
         {
             case REACT_TYPE.Panel:
-                // if (isPlaying) 
-                // {
-                //     movingPanel.SetActive(false);
-                // }
+                if (isPlaying) 
+                {
+                    movingPanel.SetActive(false);
+                }
                 break;
             case REACT_TYPE.SoundFixed:
             case REACT_TYPE.SoundFollowing:
@@ -40,6 +40,7 @@ public class ReactionWhenPlayerNearby : MonoBehaviour
                 audioPlay = false;
                 audioTimer = audioAlertInterval;
                 Debug.Assert(audioAlert != null);
+                Debug.Log(gameObject);
                 break;
             case REACT_TYPE.DroppingStuff:
                 if (isPlaying)
@@ -119,14 +120,15 @@ public class ReactionWhenPlayerNearby : MonoBehaviour
             {
                 case REACT_TYPE.Panel:
                     movingPanel.SetActive(true);
+                    SceneManager.GetInstance().reportEyeTrack(type, gameObject);
+                    Debug.Log("trigger " + gameObject.ToString());
                     break;
                 case REACT_TYPE.SoundFixed:
                 case REACT_TYPE.SoundFollowing:
-                    if (!isPlaying) 
-                    {
-                        movingPanel.SetActive(true);
-                    }
+                    movingPanel.SetActive(true);
                     audioPlay = true;
+                    SceneManager.GetInstance().reportEyeTrack(type, gameObject);
+                    Debug.Log("trigger " + gameObject.ToString());
                     break;
                 case REACT_TYPE.DroppingStuff:
                     shatteredPieaces.SetActive(true);
