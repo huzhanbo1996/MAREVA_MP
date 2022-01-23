@@ -13,7 +13,7 @@ public class ReactionWhenPlayerNearby : MonoBehaviour
 
     public float audioAlertInterval;
 
-
+    private List<AreaDetection> shatteredDetectors = new List<AreaDetection>();
     private AudioSource audioAlert;
     private float audioTimer;
     private bool audioPlay;
@@ -29,10 +29,10 @@ public class ReactionWhenPlayerNearby : MonoBehaviour
         switch(type)
         {
             case REACT_TYPE.Panel:
-                if (isPlaying) 
-                {
-                    movingPanel.SetActive(false);
-                }
+                // if (isPlaying) 
+                // {
+                //     movingPanel.SetActive(false);
+                // }
                 break;
             case REACT_TYPE.SoundFixed:
             case REACT_TYPE.SoundFollowing:
@@ -46,6 +46,12 @@ public class ReactionWhenPlayerNearby : MonoBehaviour
                 {
                     movingPanel.SetActive(false);
                 }
+                shatteredDetectors = new List<AreaDetection>(shatteredPieaces.gameObject.GetComponentsInChildren<AreaDetection>(includeInactive: true));
+                Debug.Log("Found shttered pieces with AreaDetectors of " + shatteredDetectors.Count.ToString());
+                foreach(var detector in shatteredDetectors)
+                {
+                    detector.enterEvents.Add(OnShatterPieceEnter);
+                }
                 break;
             default:
                 break;
@@ -54,12 +60,15 @@ public class ReactionWhenPlayerNearby : MonoBehaviour
 
     private void MovePanelForawd()
     {
-        movingPanel.transform.position = Camera.main.transform.position 
+        if (isPlaying)
+        {
+            movingPanel.transform.position = Camera.main.transform.position 
                 + Camera.main.transform.forward * panelOffset.z 
                 + Camera.main.transform.up * panelOffset.y
                 + Camera.main.transform.right * panelOffset.x;
-        movingPanel.transform.LookAt(Camera.main.transform.position);
-        movingPanel.transform.rotation *= Quaternion.Euler(0, 180, 0);
+            movingPanel.transform.LookAt(Camera.main.transform.position);
+            movingPanel.transform.rotation *= Quaternion.Euler(0, 180, 0);
+        }
     }
     private void RepeatlyPlayAlart()
     {
@@ -151,5 +160,13 @@ public class ReactionWhenPlayerNearby : MonoBehaviour
             }
         }
 
+    }
+    private void OnShatterPieceEnter(Collider other)
+    {
+        if (other.gameObject.tag == "MainCamera")
+        {
+            SceneManager.GetInstance().reportDroppingResult(gameObject, false);
+            Debug.Log("shattered object hit player!");
+        }
     }
 }
