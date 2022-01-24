@@ -125,7 +125,7 @@ public class ReactionWhenPlayerNearby : MonoBehaviour
                     break;
                 case REACT_TYPE.SoundFixed:
                 case REACT_TYPE.SoundFollowing:
-                    movingPanel.SetActive(true);
+                    // movingPanel.SetActive(true);
                     audioPlay = true;
                     SceneManager.GetInstance().reportEyeTrack(type, gameObject);
                     Debug.Log("trigger " + gameObject.ToString());
@@ -154,7 +154,7 @@ public class ReactionWhenPlayerNearby : MonoBehaviour
                     break;
                 case REACT_TYPE.SoundFixed:
                 case REACT_TYPE.SoundFollowing:
-                    movingPanel.SetActive(false);
+                    // movingPanel.SetActive(false);
                     audioPlay = false;
                     break;
                 default:
