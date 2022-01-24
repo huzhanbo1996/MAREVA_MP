@@ -116,18 +116,19 @@ public class ReactionWhenPlayerNearby : MonoBehaviour
         if(other.gameObject.tag == "MainCamera")
         {
             Debug.Log("On Player Enter!");
+            SceneManager.GetInstance().reportAreaEnter(gameObject);
             switch(type)
             {
                 case REACT_TYPE.Panel:
                     movingPanel.SetActive(true);
-                    SceneManager.GetInstance().reportEyeTrack(type, gameObject);
+                    // SceneManager.GetInstance().reportEyeTrack(type, gameObject);
                     Debug.Log("trigger " + gameObject.ToString());
                     break;
                 case REACT_TYPE.SoundFixed:
                 case REACT_TYPE.SoundFollowing:
                     // movingPanel.SetActive(true);
                     audioPlay = true;
-                    SceneManager.GetInstance().reportEyeTrack(type, gameObject);
+                    // SceneManager.GetInstance().reportEyeTrack(type, gameObject);
                     Debug.Log("trigger " + gameObject.ToString());
                     break;
                 case REACT_TYPE.DroppingStuff:
@@ -147,6 +148,7 @@ public class ReactionWhenPlayerNearby : MonoBehaviour
         if(other.gameObject.tag == "MainCamera")
         {
             Debug.Log("On Player Exit!");
+            SceneManager.GetInstance().reportAreaExit(gameObject);
             switch(type)
             {
                 case REACT_TYPE.Panel:

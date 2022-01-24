@@ -26,18 +26,18 @@ public class SaveData
         objPros = obj;
     }
 }
-
 [System.Serializable]
-public class SaveMesurement
+public class SaveMesurementFrame
 {
-    public List<SceneObjectProps> propsSignal = new List<SceneObjectProps>();
-    public List<SceneObjectProps> propsDanger = new List<SceneObjectProps>();
-    public List<float> timing = new List<float>();
+    public enum EVENT_TYPE {PlayerPosition, EnterArea, ExitArea, EyeOnTarget};
 
-    public SaveMesurement(List<SceneObjectProps> propsSignal, List<SceneObjectProps> propsDanger, List<float> timing) 
+    public List<EVENT_TYPE> type;
+    public List<SceneObjectProps> targets;
+    public float timing;
+    public SaveMesurementFrame(List<EVENT_TYPE> type, List<SceneObjectProps> targets, float timing) 
     {
-        this.propsSignal = propsSignal;
-        this.propsDanger = propsDanger;
+        this.type = type;
+        this.targets = targets;
         this.timing = timing;
     }
 }

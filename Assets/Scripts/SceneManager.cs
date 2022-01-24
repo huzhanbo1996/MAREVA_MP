@@ -13,13 +13,13 @@ public class SceneManager : MonoBehaviour
     [SerializeField] private List<GameObject> playModeObjectPrefabs;
     [SerializeField] private GameObject arragementObj;
 
-    [System.Serializable]
-    public class SerializeablePair
-    {
-        public GameObject signal;
-        public GameObject danger;
-    }
-    [SerializeField] private List<SerializeablePair> mesurementTimingPair;
+    // [System.Serializable]
+    // public class SerializeablePair
+    // {
+    //     public GameObject signal;
+    //     public GameObject danger;
+    // }
+    // [SerializeField] private List<SerializeablePair> mesurementTimingPair;
     [SerializeField] private List<GameObject> qrCodeObjects;
     public GameObject tmpQrDummyObject;
     private Dictionary<GameObject, float> mesurementResults = new Dictionary<GameObject, float>();
@@ -40,11 +40,36 @@ public class SceneManager : MonoBehaviour
         __scene = this;
         reloadSceneObjectsIfNeeded();
         // AdjusteScenePose("position1", new Pose(tmpQrDummyObject.transform.position, tmpQrDummyObject.transform.rotation));
+
+        int cnt = 0;
+        for (; ; cnt++)
+        {
+            if (!File.Exists(Application.persistentDataPath + "/MesureResult" + cnt.ToString()))
+            {
+                break;
+            }
+        }
+        saveMesurementFileName = Application.persistentDataPath + "/MesureResult" + cnt.ToString();
     }
 
+    private string saveMesurementFileName;
+    private SaveMesurementFrame saveMesurementFrame;
+    private List<SaveMesurementFrame.EVENT_TYPE> currFrameTypes = new List<SaveMesurementFrame.EVENT_TYPE>();
+    private List<SceneObjectProps> currFrameSceneObjectProps = new List<SceneObjectProps>();
     void Update()
     {
+        var playerProps = new SceneObjectProps(-1);
+        playerProps.position = Camera.main.transform.position;
+        playerProps.rotation = Camera.main.transform.rotation;
+        playerProps.localScale = Vector3.one;
 
+        currFrameTypes.Add(SaveMesurementFrame.EVENT_TYPE.PlayerPosition);
+        currFrameSceneObjectProps.Add(playerProps);
+        saveMesurementFrame = new SaveMesurementFrame(currFrameTypes, currFrameSceneObjectProps,Time.time);
+        SaveMesurementResult();
+
+        currFrameTypes.Clear();
+        currFrameSceneObjectProps.Clear();
     }
 
     public void reportDroppingResult(GameObject dest, bool isPlayerEscape)
@@ -54,22 +79,35 @@ public class SceneManager : MonoBehaviour
 
     public void reportEyeTrack(ReactionWhenPlayerNearby.REACT_TYPE type, GameObject dest)
     {
-        foreach(var pair in mesurementTimingPair)
-        {
-            if (dest == pair.signal && !mesurementResults.ContainsKey(dest))
-            {
-                mesurementResults.Add(dest, Time.time);
-                Debug.Log("First signal deteccted");
-            }
+        // foreach(var pair in mesurementTimingPair)
+        // {
+        //     if (dest == pair.signal && !mesurementResults.ContainsKey(dest))
+        //     {
+        //         mesurementResults.Add(dest, Time.time);
+        //         Debug.Log("First signal deteccted");
+        //     }
 
-            if (dest == pair.danger && mesurementResults.ContainsKey(pair.signal))
-            {
-                mesurementResults[pair.signal] = Time.time - mesurementResults[pair.signal];
-                Debug.Log("Second danger deteccted, saving");
-                SaveMesurementResult();
-            }
-        }
+        //     if (dest == pair.danger && mesurementResults.ContainsKey(pair.signal))
+        //     {
+        //         mesurementResults[pair.signal] = Time.time - mesurementResults[pair.signal];
+        //         Debug.Log("Second danger deteccted, saving");
+        //         SaveMesurementResult();
+        //     }
+        // }
+        currFrameTypes.Add(SaveMesurementFrame.EVENT_TYPE.EyeOnTarget);
+        currFrameSceneObjectProps.Add(sceneObjects[dest]);
+        Debug.Log("report eye on " + gameObject.ToString());
+    }
 
+    public void reportAreaEnter(GameObject dest)
+    {
+        currFrameTypes.Add(SaveMesurementFrame.EVENT_TYPE.EnterArea);
+        currFrameSceneObjectProps.Add(sceneObjects[dest]);
+    }
+    public void reportAreaExit(GameObject dest)
+    {
+        currFrameTypes.Add(SaveMesurementFrame.EVENT_TYPE.ExitArea);
+        currFrameSceneObjectProps.Add(sceneObjects[dest]);
     }
     public void newObject(int prefabIdx)
     {
@@ -282,40 +320,37 @@ public class SceneManager : MonoBehaviour
 
     public void SaveMesurementResult()
     {
-        int cnt = 0;
-        for (; ; cnt++)
-        {
-            if (!File.Exists(Application.persistentDataPath + "/MesureResult" + cnt.ToString()))
-            {
-                break;
-            }
-
-        }
+        
         BinaryFormatter bf = new BinaryFormatter();
-        FileStream file = File.Create(Application.persistentDataPath + "/MesureResult" + cnt.ToString());
-
-        List<SceneObjectProps> propsSignal = new List<SceneObjectProps>();
-        List<SceneObjectProps> propsDanger = new List<SceneObjectProps>();
-        List<float> timing = new List<float>();
-
-        foreach(var pair in mesurementTimingPair)
+        var jsonStr = JsonUtility.ToJson(saveMesurementFrame);
+        using(StreamWriter sw = File.AppendText(saveMesurementFileName))
         {
-            foreach(var mesureSignal in mesurementResults.Keys)
-            {
-                if (mesureSignal == pair.signal)
-                {
-                    Debug.Log(pair.signal);
-                    Debug.Log(pair.danger);
-                    propsSignal.Add(sceneObjects[pair.signal]);
-                    propsDanger.Add(sceneObjects[pair.danger]);
-                    timing.Add(mesurementResults[mesureSignal]);
-                }               
-            }
+            sw.Write(jsonStr);
+            sw.WriteLine("\n");
         }
-        var jsonStr = JsonUtility.ToJson(new SaveMesurement(propsSignal, propsDanger, timing));
-        bf.Serialize(file, jsonStr);
-        file.Close();
-        Debug.Log(jsonStr);
+
+        // List<SceneObjectProps> propsSignal = new List<SceneObjectProps>();
+        // List<SceneObjectProps> propsDanger = new List<SceneObjectProps>();
+        // List<float> timing = new List<float>();
+
+        // foreach(var pair in mesurementTimingPair)
+        // {
+        //     foreach(var mesureSignal in mesurementResults.Keys)
+        //     {
+        //         if (mesureSignal == pair.signal)
+        //         {
+        //             Debug.Log(pair.signal);
+        //             Debug.Log(pair.danger);
+        //             propsSignal.Add(sceneObjects[pair.signal]);
+        //             propsDanger.Add(sceneObjects[pair.danger]);
+        //             timing.Add(mesurementResults[mesureSignal]);
+        //         }               
+        //     }
+        // }
+        // var jsonStr = JsonUtility.ToJson(saveMesurementFrame);
+        // bf.Serialize(file, jsonStr);
+        // file.Close();
+        // Debug.Log(jsonStr);
         Debug.Log("Mesurement data saved!");
     }
 }
