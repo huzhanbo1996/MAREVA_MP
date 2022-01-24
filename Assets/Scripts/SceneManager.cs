@@ -20,6 +20,8 @@ public class SceneManager : MonoBehaviour
         public GameObject danger;
     }
     [SerializeField] private List<SerializeablePair> mesurementTimingPair;
+    [SerializeField] private List<GameObject> qrCodeObjects;
+    public GameObject tmpQrDummyObject;
     private Dictionary<GameObject, float> mesurementResults = new Dictionary<GameObject, float>();
 
     private Dictionary<GameObject, SceneObjectProps> sceneObjects = new Dictionary<GameObject, SceneObjectProps>();
@@ -37,6 +39,7 @@ public class SceneManager : MonoBehaviour
         Debug.Assert(__scene == null);
         __scene = this;
         reloadSceneObjectsIfNeeded();
+        // AdjusteScenePose("position1", new Pose(tmpQrDummyObject.transform.position, tmpQrDummyObject.transform.rotation));
     }
 
     void Update()
@@ -240,6 +243,41 @@ public class SceneManager : MonoBehaviour
         Debug.Log("Rebuild scene!");
         file.Close();
 
+    }
+
+    private bool hasAdjusted = false;
+    public void AdjusteScenePose(string qrCodeName, Pose qrCodePos)
+    {
+        if (hasAdjusted)
+        {
+            return;
+        }
+        
+        Debug.Log("Get qccode: " + qrCodeName + " at[ " + qrCodePos.ToString() + " ]");
+
+        if (Vector3.Distance(qrCodePos.position, gameObject.transform.position)< 0.001f )
+        {
+            return;
+        }
+
+        foreach(var code in qrCodeObjects)
+        {
+            if (code.name == qrCodeName)
+            {
+                Debug.Log("Coordinate in Unity is " + code.transform.position.ToString()+ " " + code.transform.rotation.ToString());
+                Quaternion rotation1 = code.transform.rotation;
+                Vector3 position1 = code.transform.position;
+                gameObject.transform.rotation = qrCodePos.rotation * Quaternion.Inverse(rotation1) * gameObject.transform.rotation;
+                gameObject.transform.position = qrCodePos.position - code.transform.position;
+                // gameObject.transform.Translate(-position1, Space.World);
+
+                // gameObject.transform.Translate(qrCodePos.position, Space.World);
+                
+                hasAdjusted = true;
+            }
+        }
+
+        
     }
 
     public void SaveMesurementResult()
