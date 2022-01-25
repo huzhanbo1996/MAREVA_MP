@@ -20,8 +20,8 @@ public class SceneManager : MonoBehaviour
     //     public GameObject danger;
     // }
     // [SerializeField] private List<SerializeablePair> mesurementTimingPair;
-    [SerializeField] private List<GameObject> qrCodeObjects;
     public GameObject tmpQrDummyObject;
+    public bool isPalyerMode;
     private Dictionary<GameObject, float> mesurementResults = new Dictionary<GameObject, float>();
 
     private Dictionary<GameObject, SceneObjectProps> sceneObjects = new Dictionary<GameObject, SceneObjectProps>();
@@ -128,6 +128,7 @@ public class SceneManager : MonoBehaviour
         sceneObjects[inst].rotation = inst.transform.rotation;
         sceneObjects[inst].localScale = inst.transform.localScale;
         sceneObjects[inst].isPlayerEscapeDropping = true;
+        sceneObjects[inst].name = inst.name;
     }
 
     public void holdObjectDropped(Microsoft.MixedReality.Toolkit.UI.ManipulationEventData data)
@@ -151,6 +152,7 @@ public class SceneManager : MonoBehaviour
         sceneObjects[obj].rotation = obj.transform.rotation;
         sceneObjects[obj].localScale = obj.transform.localScale;
         sceneObjects[obj].isPlayerEscapeDropping = true;
+        sceneObjects[obj].name = obj.name;
 
         holdObject = obj;
     }
@@ -203,6 +205,8 @@ public class SceneManager : MonoBehaviour
     }
     public void saveScene()
     {
+        sceneObjects.Clear();
+        gameObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
         reloadSceneObjectsIfNeeded();
         BinaryFormatter bf = new BinaryFormatter();
         FileStream file = File.Create(Application.persistentDataPath + "/MySaveData" + findLastSave().ToString());
@@ -216,23 +220,27 @@ public class SceneManager : MonoBehaviour
     public void reloadSceneObjectsIfNeeded()
     {
         // in editor, sceneObjects may be lost
-#if UNITY_EDITOR     
+// #if UNITY_EDITOR     
         if (sceneObjects.Count == 0)
         {
             for(int i=0;i<arragementObj.transform.childCount; i++)
             {    
                 var obj = arragementObj.transform.GetChild(i).gameObject;
                 var originatedName = obj.name.Replace("(Clone)","").Trim();
+                if (originatedName[originatedName.Length -1]>='0' && originatedName[originatedName.Length -1]<='9' )
+                {
+                    originatedName = originatedName.Substring(0, originatedName.Length - 1);
+                }
                 Debug.Log(originatedName);
                 sceneObjects.Add(obj, new SceneObjectProps(objectPrefabs.FindIndex(prefab => prefab.name == originatedName)));
                 sceneObjects[obj].position = obj.transform.position;
                 sceneObjects[obj].rotation = obj.transform.rotation;
                 sceneObjects[obj].localScale = obj.transform.localScale;
                 sceneObjects[obj].isPlayerEscapeDropping = true;
+                sceneObjects[obj].name = obj.transform.name;
             }
         }   
-
-#endif
+// #endif
     }
     public void clearScene()
     {
@@ -258,6 +266,7 @@ public class SceneManager : MonoBehaviour
         }
 
         clearScene();
+        gameObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
 
         BinaryFormatter bf = new BinaryFormatter();
         FileStream file = File.Open(Application.persistentDataPath + "/MySaveData" + (sceneIdx - 1).ToString(), FileMode.Open);
@@ -268,10 +277,18 @@ public class SceneManager : MonoBehaviour
 
         foreach (var target in objectList.objPros)
         {
-            var inst = GameObject.Instantiate(objectPrefabs[target.prefabIdx]);
+            GameObject inst;
+            if (!isPalyerMode)
+            {
+                inst = GameObject.Instantiate(objectPrefabs[target.prefabIdx]);
+            } else 
+            {
+                inst = GameObject.Instantiate(playModeObjectPrefabs[target.prefabIdx]);
+            }
             inst.transform.position = target.position;
             inst.transform.rotation = target.rotation;
             inst.transform.localScale = target.localScale;
+            inst.name = target.name;
 
             inst.transform.parent = arragementObj.transform;
             inst.SetActive(true);
@@ -282,40 +299,57 @@ public class SceneManager : MonoBehaviour
         file.Close();
 
     }
+    public void ForceReloadSceneProps()
+    {
+        sceneObjects.Clear();
+        for(int i=0;i<arragementObj.transform.childCount; i++)
+        {    
+            var obj = arragementObj.transform.GetChild(i).gameObject;
+            var originatedName = obj.name.Replace("(Clone)","").Trim();
+            if (originatedName[originatedName.Length -1]>='0' && originatedName[originatedName.Length -1]<='9' )
+            {
+                originatedName = originatedName.Substring(0, originatedName.Length - 1);
+            }
+            Debug.Log(originatedName);
+            sceneObjects.Add(obj, new SceneObjectProps(objectPrefabs.FindIndex(prefab => prefab.name == originatedName)));
+            sceneObjects[obj].position = obj.transform.position;
+            sceneObjects[obj].rotation = obj.transform.rotation;
+            sceneObjects[obj].localScale = obj.transform.localScale;
+            sceneObjects[obj].isPlayerEscapeDropping = true;
+            sceneObjects[obj].name = obj.name;
+        }
+    }
 
+    private bool enableAdjusted = true;
     private bool hasAdjusted = false;
+    public void ToggleAdjust()
+    {
+        enableAdjusted = !enableAdjusted;
+        hasAdjusted = false;
+    }
     public void AdjusteScenePose(string qrCodeName, Pose qrCodePos)
     {
-        if (hasAdjusted)
+        if (!enableAdjusted)
         {
             return;
         }
         
         Debug.Log("Get qccode: " + qrCodeName + " at[ " + qrCodePos.ToString() + " ]");
 
-        if (Vector3.Distance(qrCodePos.position, gameObject.transform.position)< 0.001f )
-        {
-            return;
-        }
-
-        foreach(var code in qrCodeObjects)
+        foreach(var code in sceneObjects.Keys)
         {
             if (code.name == qrCodeName)
             {
+                gameObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
                 Debug.Log("Coordinate in Unity is " + code.transform.position.ToString()+ " " + code.transform.rotation.ToString());
                 Quaternion rotation1 = code.transform.rotation;
                 Vector3 position1 = code.transform.position;
                 gameObject.transform.rotation = qrCodePos.rotation * Quaternion.Inverse(rotation1) * gameObject.transform.rotation;
                 gameObject.transform.position = qrCodePos.position - code.transform.position;
-                // gameObject.transform.Translate(-position1, Space.World);
-
-                // gameObject.transform.Translate(qrCodePos.position, Space.World);
                 
                 hasAdjusted = true;
             }
         }
-
-        
     }
 
     public void SaveMesurementResult()

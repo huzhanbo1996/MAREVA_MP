@@ -10,6 +10,7 @@ public class SceneObjectProps
     public Quaternion rotation;
     public Vector3 localScale;
     public bool isPlayerEscapeDropping;
+    public string name;
 
     public SceneObjectProps(int idx)
     {

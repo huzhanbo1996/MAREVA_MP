@@ -116,6 +116,7 @@ namespace QRTracking
                             qrCodeObject.GetComponent<QRCode>().qrCode = action.qrCode;
                             qrCodesObjectsList.Add(action.qrCode.Id, qrCodeObject);
                         }
+                        qrCodesObjectsList[action.qrCode.Id].GetComponent<SpatialGraphCoordinateSystem>().CalRotationAndPosition();
                     }
                     else if (action.type == ActionData.Type.Removed)
                     {

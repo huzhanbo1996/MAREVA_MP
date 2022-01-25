@@ -109,7 +109,6 @@ namespace QRTracking
                             pose = pose.GetTransformedBy(CameraCache.Main.transform.parent);
                         }
 
-                        SceneManager.GetInstance().AdjusteScenePose(gameObject.GetComponent<QRCode>().qrCode.Data, pose);
                         gameObject.transform.SetPositionAndRotation(pose.position, pose.rotation);
                         // Debug.Log("Id= " + id + " QRPose = " +  pose.position.ToString("F7") + " QRRot = "  +  pose.rotation.ToString("F7"));
                     }
@@ -131,52 +130,53 @@ namespace QRTracking
             UpdateLocation();
         }
 
-//         public Pose CalRotationAndPosition()
-//         {
-// #if WINDOWS_UWP
-//             Quaternion rotation = Quaternion.identity;
-//             Vector3 translation = new Vector3(0.0f, 0.0f, 0.0f);
+        public Pose CalRotationAndPosition()
+        {
+#if WINDOWS_UWP
+            Quaternion rotation = Quaternion.identity;
+            Vector3 translation = new Vector3(0.0f, 0.0f, 0.0f);
             
-//             System.IntPtr rootCoordnateSystemPtr = UnityEngine.XR.WindowsMR.WindowsMREnvironment.OriginSpatialCoordinateSystem;
-//             SpatialCoordinateSystem rootSpatialCoordinateSystem = (SpatialCoordinateSystem)System.Runtime.InteropServices.Marshal.GetObjectForIUnknown(rootCoordnateSystemPtr);
+            System.IntPtr rootCoordnateSystemPtr = UnityEngine.XR.WindowsMR.WindowsMREnvironment.OriginSpatialCoordinateSystem;
+            SpatialCoordinateSystem rootSpatialCoordinateSystem = (SpatialCoordinateSystem)System.Runtime.InteropServices.Marshal.GetObjectForIUnknown(rootCoordnateSystemPtr);
 
-//             // Get the relative transform from the unity origin
-//             System.Numerics.Matrix4x4? relativePose = CoordinateSystem.TryGetTransformTo(rootSpatialCoordinateSystem);
+            // Get the relative transform from the unity origin
+            System.Numerics.Matrix4x4? relativePose = CoordinateSystem.TryGetTransformTo(rootSpatialCoordinateSystem);
 
-//             if (relativePose != null)
-//             {
-//                 System.Numerics.Vector3 scale;
-//                 System.Numerics.Quaternion rotation1;
-//                 System.Numerics.Vector3 translation1;
+            if (relativePose != null)
+            {
+                System.Numerics.Vector3 scale;
+                System.Numerics.Quaternion rotation1;
+                System.Numerics.Vector3 translation1;
 
-//                 System.Numerics.Matrix4x4 newMatrix = relativePose.Value;
+                System.Numerics.Matrix4x4 newMatrix = relativePose.Value;
 
-//                 // Platform coordinates are all right handed and unity uses left handed matrices. so we convert the matrix
-//                 // from rhs-rhs to lhs-lhs 
-//                 // Convert from right to left coordinate system
-//                 newMatrix.M13 = -newMatrix.M13;
-//                 newMatrix.M23 = -newMatrix.M23;
-//                 newMatrix.M43 = -newMatrix.M43;
+                // Platform coordinates are all right handed and unity uses left handed matrices. so we convert the matrix
+                // from rhs-rhs to lhs-lhs 
+                // Convert from right to left coordinate system
+                newMatrix.M13 = -newMatrix.M13;
+                newMatrix.M23 = -newMatrix.M23;
+                newMatrix.M43 = -newMatrix.M43;
 
-//                 newMatrix.M31 = -newMatrix.M31;
-//                 newMatrix.M32 = -newMatrix.M32;
-//                 newMatrix.M34 = -newMatrix.M34;
+                newMatrix.M31 = -newMatrix.M31;
+                newMatrix.M32 = -newMatrix.M32;
+                newMatrix.M34 = -newMatrix.M34;
 
-//                 System.Numerics.Matrix4x4.Decompose(newMatrix, out scale, out rotation1, out translation1);
-//                 translation = new Vector3(translation1.X, translation1.Y, translation1.Z);
-//                 rotation = new Quaternion(rotation1.X, rotation1.Y, rotation1.Z, rotation1.W);
-//                 Pose pose = new Pose(translation, rotation);
+                System.Numerics.Matrix4x4.Decompose(newMatrix, out scale, out rotation1, out translation1);
+                translation = new Vector3(translation1.X, translation1.Y, translation1.Z);
+                rotation = new Quaternion(rotation1.X, rotation1.Y, rotation1.Z, rotation1.W);
+                Pose pose = new Pose(translation, rotation);
 
-//                 // If there is a parent to the camera that means we are using teleport and we should not apply the teleport
-//                 // to these objects so apply the inverse
-//                 if (CameraCache.Main.transform.parent != null)
-//                 {
-//                     pose = pose.GetTransformedBy(CameraCache.Main.transform.parent);
-//                 }
-//                 return pose;
-//             }
-// #endif          
-//             return new Pose(Vector3.zero, Quaternion.identity);
-//         }
+                // If there is a parent to the camera that means we are using teleport and we should not apply the teleport
+                // to these objects so apply the inverse
+                if (CameraCache.Main.transform.parent != null)
+                {
+                    pose = pose.GetTransformedBy(CameraCache.Main.transform.parent);
+                }
+                SceneManager.GetInstance().AdjusteScenePose(gameObject.GetComponent<QRCode>().qrCode.Data, pose);
+                return pose;
+            }
+#endif          
+            return new Pose(Vector3.zero, Quaternion.identity);
+        }
     }
 }

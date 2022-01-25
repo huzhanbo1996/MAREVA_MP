@@ -27,6 +27,12 @@ public class EditorScript : Editor
         {
             myScript.saveScene();
         }
+
+        if(GUILayout.Button("Force reload"))
+        {
+            myScript.ForceReloadSceneProps();
+        }
+        
     }
 }
 #endif
