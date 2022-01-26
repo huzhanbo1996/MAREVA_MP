@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class ReactionWhenPlayerNearby : MonoBehaviour
 {
-    public enum REACT_TYPE { Panel, PanelFixed, SoundFixed, SoundFollowing, DroppingStuff }
+    public enum REACT_TYPE { Panel, PanelFixed, SoundFixed, SoundFollowing, DroppingStuff, Obstacle }
     public bool isPlaying;
     public REACT_TYPE type;
     public GameObject movingPanel;
@@ -122,6 +122,7 @@ public class ReactionWhenPlayerNearby : MonoBehaviour
                 case REACT_TYPE.Panel:
                     movingPanel.SetActive(true);
                     // SceneManager.GetInstance().reportEyeTrack(type, gameObject);
+                    SceneManager.GetInstance().BlinkPenguin();
                     Debug.Log("trigger " + gameObject.ToString());
                     break;
                 case REACT_TYPE.SoundFixed:
@@ -129,6 +130,7 @@ public class ReactionWhenPlayerNearby : MonoBehaviour
                     // movingPanel.SetActive(true);
                     audioPlay = true;
                     // SceneManager.GetInstance().reportEyeTrack(type, gameObject);
+                    SceneManager.GetInstance().BlinkPenguin();
                     Debug.Log("trigger " + gameObject.ToString());
                     break;
                 case REACT_TYPE.DroppingStuff:

@@ -22,6 +22,7 @@ public class SceneManager : MonoBehaviour
     // [SerializeField] private List<SerializeablePair> mesurementTimingPair;
     public GameObject tmpQrDummyObject;
     public bool isPalyerMode;
+    [SerializeField] private GameObject penguinPicture;
     private Dictionary<GameObject, float> mesurementResults = new Dictionary<GameObject, float>();
 
     private Dictionary<GameObject, SceneObjectProps> sceneObjects = new Dictionary<GameObject, SceneObjectProps>();
@@ -56,16 +57,30 @@ public class SceneManager : MonoBehaviour
     private SaveMesurementFrame saveMesurementFrame;
     private List<SaveMesurementFrame.EVENT_TYPE> currFrameTypes = new List<SaveMesurementFrame.EVENT_TYPE>();
     private List<SceneObjectProps> currFrameSceneObjectProps = new List<SceneObjectProps>();
+    
+    private float logInterval = 0.5f;
+    private float timeAccum = 0.0f;
     void Update()
     {
+        if (currFrameTypes.Count == 0 && currFrameSceneObjectProps.Count == 0 && timeAccum < logInterval)
+        {
+            timeAccum += Time.deltaTime;
+            return;
+        }
+        if (timeAccum >= logInterval)
+        {
+            timeAccum -= logInterval;
+        }
         var playerProps = new SceneObjectProps(-1);
         playerProps.position = Camera.main.transform.position;
         playerProps.rotation = Camera.main.transform.rotation;
         playerProps.localScale = Vector3.one;
+        playerProps.name = "player";
 
         currFrameTypes.Add(SaveMesurementFrame.EVENT_TYPE.PlayerPosition);
         currFrameSceneObjectProps.Add(playerProps);
         saveMesurementFrame = new SaveMesurementFrame(currFrameTypes, currFrameSceneObjectProps,Time.time);
+
         SaveMesurementResult();
 
         currFrameTypes.Clear();
@@ -386,5 +401,27 @@ public class SceneManager : MonoBehaviour
         // file.Close();
         // Debug.Log(jsonStr);
         Debug.Log("Mesurement data saved!");
+    }
+
+    public void BlinkPenguin()
+    {
+        StartCoroutine(blinkCoroutine());
+    }
+
+    private bool blinking = false;
+    IEnumerator blinkCoroutine()
+    {
+        if (blinking)
+        {
+            yield break;
+        }
+        blinking = true;
+
+        penguinPicture.SetActive(true);
+        yield return new WaitForSeconds(0.02f);
+        penguinPicture.SetActive(false);
+        
+        blinking = false;
+        yield return null;
     }
 }
