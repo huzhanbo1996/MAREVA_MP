@@ -5,6 +5,7 @@ using UnityEngine.Events;
 using System;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
+using Microsoft.MixedReality.Toolkit.Input;
 
 public class SceneManager : MonoBehaviour
 {
@@ -51,6 +52,10 @@ public class SceneManager : MonoBehaviour
             }
         }
         saveMesurementFileName = Application.persistentDataPath + "/MesureResult" + cnt.ToString();
+        using(StreamWriter sw = File.AppendText(saveMesurementFileName))
+        {
+            sw.Write("{\"joueur\":[");
+        }
     }
 
     private string saveMesurementFileName;
@@ -62,6 +67,22 @@ public class SceneManager : MonoBehaviour
     private float timeAccum = 0.0f;
     void Update()
     {
+        if (provider.HitInfo.collider !=null)
+        {
+            Debug.Log("Eye Hit something");
+            foreach (var det in detectableObjects)
+            {
+                foreach(var col in det.GetComponentsInChildren<Collider>())
+                {
+                    if (col == provider.HitInfo.collider)
+                    {
+                        Debug.Log("Eye Hit target :" + det.ToString());
+                        reportEyeTrack(ReactionWhenPlayerNearby.REACT_TYPE.Panel, det);
+                    }
+                }
+
+            }
+        }
         if (currFrameTypes.Count == 0 && currFrameSceneObjectProps.Count == 0 && timeAccum < logInterval)
         {
             timeAccum += Time.deltaTime;
@@ -253,6 +274,10 @@ public class SceneManager : MonoBehaviour
                 sceneObjects[obj].localScale = obj.transform.localScale;
                 sceneObjects[obj].isPlayerEscapeDropping = true;
                 sceneObjects[obj].name = obj.transform.name;
+                if (obj.GetComponent<ReportEyeTrackEvent>()!=null)
+                {
+                    detectableObjects.Add(obj);
+                }
             }
         }   
 // #endif
@@ -342,31 +367,37 @@ public class SceneManager : MonoBehaviour
         enableAdjusted = !enableAdjusted;
         hasAdjusted = false;
     }
+    private List<string> usedQrCode = new List<string>();
     public void AdjusteScenePose(string qrCodeName, Pose qrCodePos)
     {
-        if (!enableAdjusted)
+        Debug.Log("Get qccode: " + qrCodeName + " at[ " + qrCodePos.ToString() + " ]");
+        if (usedQrCode.Contains(qrCodeName))
         {
             return;
         }
         
-        Debug.Log("Get qccode: " + qrCodeName + " at[ " + qrCodePos.ToString() + " ]");
+        Debug.Log("New qr code");
 
         foreach(var code in sceneObjects.Keys)
         {
             if (code.name == qrCodeName)
             {
-                gameObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+                arragementObj.SetActive(false);
+                arragementObj.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
                 Debug.Log("Coordinate in Unity is " + code.transform.position.ToString()+ " " + code.transform.rotation.ToString());
                 Quaternion rotation1 = code.transform.rotation;
                 Vector3 position1 = code.transform.position;
-                gameObject.transform.rotation = qrCodePos.rotation * Quaternion.Inverse(rotation1) * gameObject.transform.rotation;
-                gameObject.transform.position = qrCodePos.position - code.transform.position;
-                
-                hasAdjusted = true;
+                arragementObj.transform.rotation = qrCodePos.rotation * Quaternion.Inverse(rotation1) * arragementObj.transform.rotation;
+                arragementObj.transform.position = qrCodePos.position - code.transform.position;
+                arragementObj.SetActive(true);
+
+                Debug.Log("Coordinate adjusted :" + code.transform.position.ToString()+ " " + code.transform.rotation.ToString());
+                usedQrCode.Add(code.name);
             }
         }
     }
 
+    private static int mesureCount = 0; 
     public void SaveMesurementResult()
     {
         
@@ -374,9 +405,11 @@ public class SceneManager : MonoBehaviour
         var jsonStr = JsonUtility.ToJson(saveMesurementFrame);
         using(StreamWriter sw = File.AppendText(saveMesurementFileName))
         {
+            // sw.Write("\"" + mesureCount.ToString() + "\" :");
             sw.Write(jsonStr);
-            sw.WriteLine("\n");
+            sw.WriteLine(",");
         }
+        mesureCount++;
 
         // List<SceneObjectProps> propsSignal = new List<SceneObjectProps>();
         // List<SceneObjectProps> propsDanger = new List<SceneObjectProps>();
@@ -418,10 +451,14 @@ public class SceneManager : MonoBehaviour
         blinking = true;
 
         penguinPicture.SetActive(true);
-        yield return new WaitForSeconds(0.02f);
+        yield return new WaitForSeconds(0.2f);
         penguinPicture.SetActive(false);
         
         blinking = false;
         yield return null;
     }
+
+    [SerializeField] private GazeProvider provider;
+    private List<GameObject> detectableObjects = new List<GameObject>();
+
 }

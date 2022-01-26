@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class ReactionWhenPlayerNearby : MonoBehaviour
 {
-    public enum REACT_TYPE { Panel, PanelFixed, SoundFixed, SoundFollowing, DroppingStuff, Obstacle }
+    public enum REACT_TYPE { Panel, PanelFixed, SoundFixed, SoundFollowing, DroppingStuff, Obstacle, PicPenguin, PicPenguinRandom }
     public bool isPlaying;
     public REACT_TYPE type;
     public GameObject movingPanel;
@@ -12,6 +12,7 @@ public class ReactionWhenPlayerNearby : MonoBehaviour
     public Vector3 panelOffset;
 
     public float audioAlertInterval;
+    public bool showPenguin;
 
     private List<AreaDetection> shatteredDetectors = new List<AreaDetection>();
     private AudioSource audioAlert;
@@ -43,16 +44,20 @@ public class ReactionWhenPlayerNearby : MonoBehaviour
                 Debug.Log(gameObject);
                 break;
             case REACT_TYPE.DroppingStuff:
-                if (isPlaying)
-                {
-                    movingPanel.SetActive(false);
-                }
+                // if (isPlaying)
+                // {
+                //     movingPanel.SetActive(false);
+                // }
                 shatteredDetectors = new List<AreaDetection>(shatteredPieaces.gameObject.GetComponentsInChildren<AreaDetection>(includeInactive: true));
                 Debug.Log("Found shttered pieces with AreaDetectors of " + shatteredDetectors.Count.ToString());
                 foreach(var detector in shatteredDetectors)
                 {
                     detector.enterEvents.Add(OnShatterPieceEnter);
                 }
+                break;
+            case REACT_TYPE.PicPenguinRandom:
+                float translate = Random.Range(-0.5f, 0.5f) * gameObject.transform.localScale.z;
+                GetComponentInChildren<AreaDetection>().gameObject.transform.Translate(new Vector3(0f,0f,translate), Space.Self);
                 break;
             default:
                 break;
@@ -117,12 +122,15 @@ public class ReactionWhenPlayerNearby : MonoBehaviour
         {
             Debug.Log("On Player Enter!");
             SceneManager.GetInstance().reportAreaEnter(gameObject);
+            if (showPenguin)
+            {
+                SceneManager.GetInstance().BlinkPenguin();
+            }
             switch(type)
             {
                 case REACT_TYPE.Panel:
                     movingPanel.SetActive(true);
                     // SceneManager.GetInstance().reportEyeTrack(type, gameObject);
-                    SceneManager.GetInstance().BlinkPenguin();
                     Debug.Log("trigger " + gameObject.ToString());
                     break;
                 case REACT_TYPE.SoundFixed:
@@ -130,7 +138,6 @@ public class ReactionWhenPlayerNearby : MonoBehaviour
                     // movingPanel.SetActive(true);
                     audioPlay = true;
                     // SceneManager.GetInstance().reportEyeTrack(type, gameObject);
-                    SceneManager.GetInstance().BlinkPenguin();
                     Debug.Log("trigger " + gameObject.ToString());
                     break;
                 case REACT_TYPE.DroppingStuff:
