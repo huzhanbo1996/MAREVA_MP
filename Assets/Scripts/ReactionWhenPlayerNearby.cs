@@ -19,7 +19,6 @@ public class ReactionWhenPlayerNearby : MonoBehaviour
     private float audioTimer;
     private bool audioPlay;
     private AreaDetection detector;
-    // Start is called before the first frame update
     void Start()
     {
         detector = GetComponentInChildren<AreaDetection>();
@@ -44,10 +43,6 @@ public class ReactionWhenPlayerNearby : MonoBehaviour
                 Debug.Log(gameObject);
                 break;
             case REACT_TYPE.DroppingStuff:
-                // if (isPlaying)
-                // {
-                //     movingPanel.SetActive(false);
-                // }
                 shatteredDetectors = new List<AreaDetection>(shatteredPieaces.gameObject.GetComponentsInChildren<AreaDetection>(includeInactive: true));
                 Debug.Log("Found shttered pieces with AreaDetectors of " + shatteredDetectors.Count.ToString());
                 foreach(var detector in shatteredDetectors)
@@ -86,7 +81,6 @@ public class ReactionWhenPlayerNearby : MonoBehaviour
             audioAlert.Play();
         }
     }
-    // Update is called once per frame
     void Update()
     {
         switch(type)
@@ -130,14 +124,11 @@ public class ReactionWhenPlayerNearby : MonoBehaviour
             {
                 case REACT_TYPE.Panel:
                     movingPanel.SetActive(true);
-                    // SceneManager.GetInstance().reportEyeTrack(type, gameObject);
                     Debug.Log("trigger " + gameObject.ToString());
                     break;
                 case REACT_TYPE.SoundFixed:
                 case REACT_TYPE.SoundFollowing:
-                    // movingPanel.SetActive(true);
                     audioPlay = true;
-                    // SceneManager.GetInstance().reportEyeTrack(type, gameObject);
                     Debug.Log("trigger " + gameObject.ToString());
                     break;
                 case REACT_TYPE.DroppingStuff:
@@ -165,7 +156,6 @@ public class ReactionWhenPlayerNearby : MonoBehaviour
                     break;
                 case REACT_TYPE.SoundFixed:
                 case REACT_TYPE.SoundFollowing:
-                    // movingPanel.SetActive(false);
                     audioPlay = false;
                     break;
                 default:

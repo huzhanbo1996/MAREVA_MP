@@ -13,17 +13,11 @@ public class SceneManager : MonoBehaviour
     [SerializeField] private List<GameObject> objectPrefabs;
     [SerializeField] private List<GameObject> playModeObjectPrefabs;
     [SerializeField] private GameObject arragementObj;
-
-    // [System.Serializable]
-    // public class SerializeablePair
-    // {
-    //     public GameObject signal;
-    //     public GameObject danger;
-    // }
-    // [SerializeField] private List<SerializeablePair> mesurementTimingPair;
     public GameObject tmpQrDummyObject;
     public bool isPalyerMode;
     [SerializeField] private GameObject penguinPicture;
+    [SerializeField] private GazeProvider provider;
+    private List<GameObject> detectableObjects = new List<GameObject>();
     private Dictionary<GameObject, float> mesurementResults = new Dictionary<GameObject, float>();
 
     private Dictionary<GameObject, SceneObjectProps> sceneObjects = new Dictionary<GameObject, SceneObjectProps>();
@@ -41,7 +35,6 @@ public class SceneManager : MonoBehaviour
         Debug.Assert(__scene == null);
         __scene = this;
         reloadSceneObjectsIfNeeded();
-        // AdjusteScenePose("position1", new Pose(tmpQrDummyObject.transform.position, tmpQrDummyObject.transform.rotation));
 
         int cnt = 0;
         for (; ; cnt++)
@@ -115,21 +108,6 @@ public class SceneManager : MonoBehaviour
 
     public void reportEyeTrack(ReactionWhenPlayerNearby.REACT_TYPE type, GameObject dest)
     {
-        // foreach(var pair in mesurementTimingPair)
-        // {
-        //     if (dest == pair.signal && !mesurementResults.ContainsKey(dest))
-        //     {
-        //         mesurementResults.Add(dest, Time.time);
-        //         Debug.Log("First signal deteccted");
-        //     }
-
-        //     if (dest == pair.danger && mesurementResults.ContainsKey(pair.signal))
-        //     {
-        //         mesurementResults[pair.signal] = Time.time - mesurementResults[pair.signal];
-        //         Debug.Log("Second danger deteccted, saving");
-        //         SaveMesurementResult();
-        //     }
-        // }
         currFrameTypes.Add(SaveMesurementFrame.EVENT_TYPE.EyeOnTarget);
         currFrameSceneObjectProps.Add(sceneObjects[dest]);
         Debug.Log("report eye on " + gameObject.ToString());
@@ -154,7 +132,6 @@ public class SceneManager : MonoBehaviour
                 + Camera.main.transform.forward * newSpawnObjectOffset.z 
                 + Camera.main.transform.up * newSpawnObjectOffset.y
                 + Camera.main.transform.right * newSpawnObjectOffset.x;
-        // inst.transform.LookAt(Camera.main.transform.position);
         inst.SetActive(true);
 
         holdObject = inst;
@@ -204,28 +181,6 @@ public class SceneManager : MonoBehaviour
         Destroy(holdObject);
     }
 
-    // #if WINDOWS_UWP
-    //     Windows.Storage.ApplicationDataContainer localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
-    //     Windows.Storage.StorageFolder localFolder = Windows.Storage.ApplicationData.Current.LocalFolder;
-    // #endif
-
-    // #if WINDOWS_UWP
-    //     async void WriteData()
-    //     {
-    //         if (firstSave)
-    //         {
-    //             StorageFile sampleFile = await localFolder.CreateFileAsync(fileName, CreationCollisionOption.ReplaceExisting);
-    //             await FileIO.AppendTextAsync(sampleFile, saveInformation + "\r\n");
-    //             firstSave = false;
-    //         }
-    //         else
-    //         {
-    //             StorageFile sampleFile = await localFolder.CreateFileAsync(fileName, CreationCollisionOption.OpenIfExists);
-    //             await FileIO.AppendTextAsync(sampleFile, saveInformation + "\r\n");
-    //         }
-    //     }
-    // #endif
-
     private int findLastSave()
     {
         int cnt = 0;
@@ -255,8 +210,7 @@ public class SceneManager : MonoBehaviour
 
     public void reloadSceneObjectsIfNeeded()
     {
-        // in editor, sceneObjects may be lost
-// #if UNITY_EDITOR     
+        // in editor, sceneObjects may be lost 
         if (sceneObjects.Count == 0)
         {
             for(int i=0;i<arragementObj.transform.childCount; i++)
@@ -280,7 +234,6 @@ public class SceneManager : MonoBehaviour
                 }
             }
         }   
-// #endif
     }
     public void clearScene()
     {
@@ -405,34 +358,10 @@ public class SceneManager : MonoBehaviour
         var jsonStr = JsonUtility.ToJson(saveMesurementFrame);
         using(StreamWriter sw = File.AppendText(saveMesurementFileName))
         {
-            // sw.Write("\"" + mesureCount.ToString() + "\" :");
             sw.Write(jsonStr);
             sw.WriteLine(",");
         }
         mesureCount++;
-
-        // List<SceneObjectProps> propsSignal = new List<SceneObjectProps>();
-        // List<SceneObjectProps> propsDanger = new List<SceneObjectProps>();
-        // List<float> timing = new List<float>();
-
-        // foreach(var pair in mesurementTimingPair)
-        // {
-        //     foreach(var mesureSignal in mesurementResults.Keys)
-        //     {
-        //         if (mesureSignal == pair.signal)
-        //         {
-        //             Debug.Log(pair.signal);
-        //             Debug.Log(pair.danger);
-        //             propsSignal.Add(sceneObjects[pair.signal]);
-        //             propsDanger.Add(sceneObjects[pair.danger]);
-        //             timing.Add(mesurementResults[mesureSignal]);
-        //         }               
-        //     }
-        // }
-        // var jsonStr = JsonUtility.ToJson(saveMesurementFrame);
-        // bf.Serialize(file, jsonStr);
-        // file.Close();
-        // Debug.Log(jsonStr);
         Debug.Log("Mesurement data saved!");
     }
 
@@ -457,8 +386,4 @@ public class SceneManager : MonoBehaviour
         blinking = false;
         yield return null;
     }
-
-    [SerializeField] private GazeProvider provider;
-    private List<GameObject> detectableObjects = new List<GameObject>();
-
 }

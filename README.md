@@ -43,6 +43,7 @@ Program can be directly tested in Unity play mode or on Hololens 2.
 
     4. Sometimes app fails rendering due to high CPU usage, espacially when we start by point 2. It can occur like this: after the adjustement by QR code, suddenly everythings varnished. Or it's also possible that the rendering failure is due to location tracking failure caused by Hololens itself.
 
+    5. Eye track via SDK script isn't working on Hololens, though perfectly in Unity. So I use GazeProvider.
 
 ## Acknowledgments
 
